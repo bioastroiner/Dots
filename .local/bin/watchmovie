@@ -1,0 +1,38 @@
+#!/bin/sh
+####################
+##  ____  _     ####
+## | __ )(_) ___####
+## |  _ \| |/ _ \###
+## | |_) | | (_) |##
+## |____/|_|\___/###
+#####################################################
+# give it a directory and it will select a 
+# video file from there and play it with dmenu
+#####################################################
+
+#a directory where you store directory which your movies are stored in
+#in this format: $MOVIEDIR/{catg1,catg2,catg3,...} -> catgN/{film1,film2,film3,...}
+MOVIEDIR=$HOME/Videos/Video
+#MDIR=$HOME/Videos/Video/Movie
+#ADIR=$HOME/Videos/Video/Anime
+
+tmp=/tmp/tmpfile
+echo " =====================MOVIE PICKER=================== " > $tmp
+echo " ==================================================== " >> $tmp
+
+for f in "$MOVIEDIR"/*
+        do
+                string=$(basename "$f")
+                echo "𒁈𒁈𒁈 $string 𒁈𒁈𒁈" >> $tmp
+                ls -d "$f"/* | shuf >> $tmp
+        done
+
+#ls -d $MDIR/* | shuf > $tmp
+#ls -d $ADIR/* | shuf >> $tmp
+SOURCE="$(cat $tmp | dmenu -l 15)"
+                echo "$f" | xargs basename >> tmp
+#find "$SOURCE" -print | egrep '.avi|.mp4' > $tmp
+du -a "$SOURCE" | awk '{$1="";print}' | egrep '.avi$|.mp4$|.webm$|.mkv$' | sed 's/ //' > $tmp
+entry="$(cat $tmp | dmenu -l 35)"
+[ ! -z "$entry" ] && mpv --idle --force-window "$entry"
+rm $tmp

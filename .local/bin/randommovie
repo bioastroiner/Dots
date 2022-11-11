@@ -1,0 +1,18 @@
+#!/bin/sh
+####################
+##  ____  _     ####
+## | __ )(_) ___####
+## |  _ \| |/ _ \###
+## | |_) | | (_) |##
+## |____/|_|\___/###
+#####################################################
+# give it a directory and it will select a 
+# random video file from there and play it
+#####################################################
+MDIR=$HOME/Videos/Video/Movie
+SOURCE="$MDIR/$(ls $MDIR | shuf | dmenu -l 10)"
+tmp=/tmp/tmpfile
+find "$SOURCE" -print | egrep '.avi|.mp4|.mkv' > $tmp
+COUNT=$(cat $tmp | wc -l)
+mpv "$(cat $tmp | sed "$(( RANDOM % $(cat $tmp | wc -l)))q;d")" 
+rm $tmp

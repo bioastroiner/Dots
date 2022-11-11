@@ -1,0 +1,17 @@
+#!/bin/sh
+alias m='mpv'
+alias fonts='fc-list -f '%{file}\n' | sort'
+alias yaya="yay -Sua"
+alias pacsrchq="pacman -Qq | fzf --preview 'pacman -Qil {}' --layout=reverse --bind 'enter:execute(pacman -Qil {} | less)'"
+alias pacsrch="pacman -Slq | fzf --preview 'pacman -Si {}' --layout=reverse"
+alias yaysrch="yay -Slq | fzf --preview 'yay -Si {}' --layout=reverse"
+alias yayins="yaysrch | xargs yay -S"
+alias manall=man_all
+#alias ls="exa"
+man_all(){
+name=$(man -k . | dmenu -l 30 | awk '{print $1}')
+[ ! -z "$name" ] && man -Tpdf "$name" | zathura -
+}
+alias ls='exa --icons -a --group-directories-first'
+alias grep='grep --color=auto'
+alias vim='vim -u "$XDG_CONFIG_HOME/vim/vimrc"'

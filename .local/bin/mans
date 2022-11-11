@@ -1,0 +1,5 @@
+#!/bin/sh
+# prints a list of all the manuals
+# in dmenu and show them in zathura
+name=$(man -k . | dmenu -l 30 | awk '{print $1}')
+[ ! -z "$name" ] && man -Tpdf "$name" | zathura -
