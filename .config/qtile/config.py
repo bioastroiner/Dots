@@ -5,6 +5,9 @@ from libqtile.lazy import lazy
 from libqtile.utils import guess_terminal
 import os 
 import subprocess
+import tracemalloc
+
+tracemalloc.start()
 
 @lazy.function
 def next_window(qtile):
@@ -35,7 +38,7 @@ mod = "mod4" #set super key (windows key)
 terminal = "st"
 browser = "firefox"
 myFont = "Minecraft"
-city="Tehran"
+city="Ahwaz"
 keys = [
     # at https://docs.qtile.org/en/latest/manual/config/lazy.html
     Key([mod], "Tab", lazy.next_layout()),
@@ -78,16 +81,6 @@ keys = [
     Key([mod, "shift"], "s", lazy.spawn("flameshot gui")),
     
 ]
-#groups = [Group("🌐", layout='tile'),
-#          Group("🖥️", layout='tile'),
-#          Group("✉️", layout='tile'),
-#          Group("📽️", layout='tile'),
-#          Group("🎲", layout='tile'),
-#          Group("6️⃣", layout='tile'),
-#          Group("7️⃣", layout='tile'),
-#          Group("8️⃣", layout='tile'),
-#          Group("🗒️", layout='tile'),
-#          Group("📌", layout='floating')]
 
 groups = [Group(i) for i in "123456789"]
 labels = [
@@ -96,7 +89,7 @@ labels = [
     '🖥️',
     '✉️',
     '📽️',
-    '🎲',
+    '🎮',
     '6️⃣',
     '7️⃣',
     '8️⃣',
@@ -128,8 +121,8 @@ for i in groups:
         ]
     )
 
-layout_theme = {"border_width": 2,
-                "margin": 10,
+layout_theme = {"border_width": 1,
+                "margin": 1,
                 "border_focus": "#055ae3",
                 "border_normal": "#1D2330"
                 }
@@ -141,7 +134,7 @@ layouts = [
     #layout.Max(**layout_theme),
     # Try more layouts by unleashing below layouts.
     #layout.Stack(num_stacks=2),
-    layout.Bsp(),
+    layout.Bsp(**layout_theme),
     #layout.Matrix(),
     #layout.RatioTile(**layout_theme),
     #layout.TreeTab(**layout_theme),
@@ -152,8 +145,8 @@ layouts = [
 
 widget_defaults = dict(
     font=myFont,
-    fontsize=16,
-    padding=3,
+    fontsize=12,
+    padding=0,
     foregound='#ffffff'
 )
 extension_defaults = widget_defaults.copy()
@@ -171,10 +164,6 @@ def get_kb_layout():
     ).stdout
     return output
 
-#def get_storage():
-#    return subprocess.check_output(['sh ~/.local/bin/sb-disk']).decode('utf-8').strip()
-
-# [Bright,Dim]
 bar_color = ['#00003f00','#00005f00']
 W    = '#ffffff'
 B    = '#000000'
@@ -182,41 +171,30 @@ screens = [
     Screen(
         top=bar.Bar(
             [
-                widget.GroupBox(background=bar_color[1],
-                    active=B,
-                    inactive=W,
-                    # Active group highlight color when using 'line' highlight method.
-                    highlight_color=[B, W]),
+                widget.GroupBox(background=bar_color[1],active=B,inactive=W,highlight_color=[B, W]),
                 widget.WindowName(font=myFont),
-                widget.Chord(
-                    chords_colors={
-                        "launch": ("#ff0000", "#ffffff"),
-                    },
-                    name_transform=lambda name: name.upper(),
-                ),
                 widget.Systray(background=bar_color[1]),
-                widget.CheckUpdates(display_format="📦:{updates}",background=bar_color[1],distro="Arch",update_interval=300,no_update_string='✅'),
-                widget.Clock(format="|📅: %A, %B %d ⏰: %I:%M %p",
+                widget.CheckUpdates(display_format="❗{updates}",background=bar_color[1],distro="Arch",update_interval=300,no_update_string=''),
+                widget.Clock(format=" 🗓️ %A, %B %d ⏰ %I:%M %p",
                     background=bar_color[0],
                     mouse_callbacks={},
                     update_interval=60),
-                widget.Net(update_interval=2,background=bar_color[1],format='|🚀: {down} ↓ {up} ↑',padding=5),
-                widget.GenPollText(update_interval=1800,func=lambda: subprocess.check_output(['curl','wttr.in/'+city+'?format=1']).decode('utf-8').strip()),
+                widget.Net(update_interval=10,background=bar_color[1],format=' 🚀{down}↓{up}↑ ',padding=1,fontsize=9),
+                #widget.GenPollText(update_interval=1800,func=lambda: subprocess.check_output(['curl','wttr.in/'+city+'?format=1']).decode('utf-8').strip()),
                 #widget.KeyboardLayout(configured_keyboards=['us', 'ir'],option='compose:menu,grp_led:scroll',display_map={'us': '🇺🇸', 'ir': '🇹🇯'},background=bar_color[1]),
-                widget.GenPollText(
-                    func=get_kb_layout,
-                    update_interval=0.5),
+                widget.GenPollText(func=get_kb_layout,update_interval=0.5),
                 # Custom Shell Scripts
                 widget.GenPollText(update_interval=60, func=get_uptime,background=bar_color[0]),
                 widget.GenPollText(update_interval=5, func=get_memory,background=bar_color[1]),
                 widget.DF(visible_on_warn=False,format='  💾{uf}{m}  🫙{r:.0f}% ',warn_space=40,background=bar_color[0],update_interval=600),
-                widget.QuickExit(default_text=' 🔑 ', countdown_format='[{}]',background=bar_color[0],foreground='#000000')
-            ],24,opacity=0.6,
+                widget.QuickExit(default_text=' 🔑 ', countdown_format='[{}]',background=bar_color[0],foreground='#FF0000')
+            ],14,opacity=0.6,
             # [N E S W]
-            margin=[5,10,1,10],
+            margin=[1,1,0,1],
             background='#00000000',
             font=myFont
         ),
+        #bottom=bar.Bar([widget.GroupBox()],size=24,opacity=0.6,margin=[0,0,0,0],background="#0000000",font=myFont)
     ),
 ]
 
@@ -225,14 +203,14 @@ mouse = [
     Drag([mod], "Button1", lazy.window.set_position_floating(), start=lazy.window.get_position()),
     Drag([mod], "Button3", lazy.window.set_size_floating(), start=lazy.window.get_size()),
     Click([mod], "Button2", lazy.window.bring_to_front()),
-    Click([mod, "shift"], "Button1", lazy.window.toggle_floating(), desc='Toggle floating'),
+    Click([mod, "shift"], "Button1", lazy.window.toggle_floating()),
 ]
 
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: list
 follow_mouse_focus = True
 bring_front_click = False
-cursor_warp = False
+cursor_warp = True
 floating_layout = layout.Floating(
     float_rules=[
         # Run `xprop` 
@@ -248,7 +226,8 @@ floating_layout = layout.Floating(
         Match(title='Qalculate!'),        # qalculate-gtk
         Match(wm_class='kdenlive'),       # kdenlive
         Match(wm_class='pinentry-gtk-2'), # GPG key password entry
-
+        Match(wm_class="krita"),
+        #Match(wm_class="System-config-printer.py"), #cups config
     ]
 )
 auto_fullscreen = True
