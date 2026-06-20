@@ -9,7 +9,7 @@
 # give it a directory and it will select a 
 # random video file from there and play it
 #####################################################
-MDIR=$HOME/Videos/Video/Movie
+MDIR=$HOME/Storage/Movie
 SOURCE="$MDIR/$(ls $MDIR | shuf | dmenu -l 10)"
 tmp=/tmp/tmpfile
 find "$SOURCE" -print | egrep '.avi|.mp4|.mkv' > $tmp

@@ -1,0 +1,54 @@
+#!/bin/sh
+# looks for your minecraft instance folder and lets you choose packs to run them quickly without opneing prism!
+# TODO: ADD MODES (resourcepack viewer and screenshot browser)
+# TODO: Launch straight into server
+
+
+# use bemenu bec wayland, use dmenu if not wayland
+DMENU=/bin/bemenu
+if [ ! -f "$DMENU" ]; then
+	DEMNU=/bin/demnu
+fi
+
+# list instances, change to your instance folder
+INS=$HOME/Storage/Games/instances
+SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
+
+# do stuff to selected pack, you can get metadata from it or and launch it
+PACK="$INS/$SOURCE"
+#VERS=$(awk -F= '/^ManagedPackVersionName=/{print $2}' "$PACK/instance.cfg")
+#DATE=$(awk -F= '/^lastLaunchTime=/{print $2}' "$PACK/instance.cfg")
+#ls -a "$PACK"
+#cat "$PACK/mmc-pack.json"
+#cat "$PACK/instance.cfg"
+
+# world selector
+DOTMC="$PACK/.minecraft"
+if [ ! -e "$DOTMC" ]; then
+	DOTMC="$PACK/minecraft"
+fi
+WDIR="$(ls "$DOTMC/saves" | shuf | $DMENU -l 10)"
+
+
+# launch the pack
+if [ -z "$DOTMC" ]; then
+prismlauncher --launch "$SOURCE" -w "$WDIR"
+else
+prismlauncher --launch "$SOURCE"
+fi
+#prismlauncher --config "$SOURCE"
+
+
+#Usage: prismlauncher [-h] [-v] [-d dir] [-l launch] [-s server] [-a profile] [-I import] [--show show] [--alive] [--help-all]
+
+#Options:
+#  -d, --dir directory    Use a custom path as application root (use '.' for current directory)
+#  -l, --launch instance  Launch the specified instance (by instance ID)
+#  -s, --server address   Join the specified server on launch (only valid in combination with --launch)
+#  -a, --profile profile  Use the account specified by its profile name (only valid in combination with --launch)
+#  --alive                Write a small 'live.check' file after the launcher starts
+#  -I, --import file      Import instance from specified zip (local path or URL)
+#  --show show            Opens the window for the specified instance (by instance ID)
+#  -h, --help             Displays help on commandline options.
+#  --help-all             Displays help, including generic Qt options.
+#  -v, --version          Displays version information.
