@@ -2,6 +2,7 @@
 # looks for your minecraft instance folder and lets you choose packs to run them quickly without opneing prism!
 # TODO: ADD MODES (resourcepack viewer and screenshot browser)
 # TODO: Launch straight into server
+# TODO: make it work with polymc and other launchers that support commands
 
 
 # use bemenu bec wayland, use dmenu if not wayland
@@ -10,8 +11,16 @@ if [ ! -f "$DMENU" ]; then
 	DEMNU=/bin/demnu
 fi
 
+# FIXME globvar setting dosent work
 # list instances, change to your instance folder
+# use env varb $INS_MINECRAFT to set it
+# TODO make it grab prism launcher instance dir
+
 INS=$HOME/Storage/Games/instances
+if [ ! -z "$INS_MINECRAFT"]; then
+INS=$INS_MINECRAFT
+fi
+echo $INS
 SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
 
 # do stuff to selected pack, you can get metadata from it or and launch it
