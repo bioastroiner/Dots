@@ -4,11 +4,12 @@
 # TODO: Launch straight into server
 # TODO: make it work with polymc and other launchers that support commands
 
+LAUNCHER=/bin/prismlauncher
 
 # use bemenu bec wayland, use dmenu if not wayland
 DMENU=/bin/bemenu
 if [ ! -f "$DMENU" ]; then
-	DEMNU=/bin/demnu
+  DEMNU=/bin/demnu
 fi
 
 # FIXME globvar setting dosent work
@@ -18,10 +19,16 @@ fi
 
 INS=$HOME/Storage/Games/instances
 if [ ! -z "$INS_MINECRAFT"]; then
-INS=$INS_MINECRAFT
+  INS=$INS_MINECRAFT
 fi
 echo $INS
+# TODO sort by last played
 SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
+
+# if we leave the prog $SOURCE is empty so quit
+if [ -z "$SOURCE" ]; then
+  exit 1
+fi
 
 # do stuff to selected pack, you can get metadata from it or and launch it
 PACK="$INS/$SOURCE"
@@ -34,19 +41,17 @@ PACK="$INS/$SOURCE"
 # world selector
 DOTMC="$PACK/.minecraft"
 if [ ! -e "$DOTMC" ]; then
-	DOTMC="$PACK/minecraft"
+  DOTMC="$PACK/minecraft"
 fi
 WDIR="$(ls "$DOTMC/saves" | shuf | $DMENU -l 10)"
 
-
 # launch the pack
-if [ -z "$DOTMC" ]; then
-prismlauncher --launch "$SOURCE" -w "$WDIR"
+if [ -z "$WDIR" ]; then
+  $LAUNCHER --launch "$SOURCE" -w "$WDIR"
 else
-prismlauncher --launch "$SOURCE"
+  $LAUNCHER -launch "$SOURCE"
 fi
-#prismlauncher --config "$SOURCE"
-
+#$LAUNCHER --config "$SOURCE"
 
 #Usage: prismlauncher [-h] [-v] [-d dir] [-l launch] [-s server] [-a profile] [-I import] [--show show] [--alive] [--help-all]
 
