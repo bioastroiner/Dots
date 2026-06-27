@@ -4,65 +4,153 @@
 # TODO: Launch straight into server
 # TODO: make it work with polymc and other launchers that support commands
 
+CFG_PATH="$HOME/.local/"
+FAV_PATH="$CFG_PATH/favourites.txt"
 LAUNCHER=/bin/prismlauncher
-
+#LOG=/dev/null   # disable logging
+LOG=/tmp/mc.log # enable logging
 # use bemenu bec wayland, use dmenu if not wayland
-DMENU=/bin/bemenu
-if [ ! -f "$DMENU" ]; then
-  DEMNU=/bin/demnu
+#DMENU=/bin/bemenu
+DMENU="/bin/rofi -dmenu"
+F_MODE=0
+W_MODE=0
+SEL_FAV=0
+REM_FAV=0
+rm $LOG >>/dev/null
+touch $LOG
+date >>$LOG
+echo PWD="$PWD" >>$LOG
+if [ -f "$DMENU" ]; then
+  DMENU=/bin/dmenu
 fi
+echo DMENU="$DMENU" >>$LOG
 
-# FIXME globvar setting dosent work
-# list instances, change to your instance folder
-# use env varb $INS_MINECRAFT to set it
-# TODO make it grab prism launcher instance dir
+main() {
+  CFG_COMMAND="Play
+Play Favourites
+Add Favourites
+Remove Favourites
+Browse Screenshots
+Exit"
+  case $(echo "$CFG_COMMAND" | $DMENU -l 10) in
+  "Play")
+    F_MODE=0
+    play
+    ;;
+  "Play Favourites")
+    F_MODE=1
+    play
+    ;;
+  "Add Favourites")
+    SEL_FAV=1
+    play
+    ;;
+  "Remove Favourites")
+    #TODO: make it let you choose
+    rm "$FAV_PATH"
+    main
+    ;;
+  "Browse Screenshots")
+    #TODO: Screenshots
+    main
+    ;;
+  "Exit")
+    exit 1
+    ;;
+  *)
+    # Default fallback commands (like 'default' in C/Java)
+    exit 1
+    ;;
+  esac
+}
 
-INS=$HOME/Storage/Games/instances
-if [ ! -z "$INS_MINECRAFT"]; then
-  INS=$INS_MINECRAFT
-fi
-echo $INS
-# TODO sort by last played
-SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
+play() {
+  # FIXME globvar setting dosent work
+  # list instances, change to your instance folder
+  # use env varb $INS_MINECRAFT to set it
+  # TODO make it grab prism launcher instance dir
+  case $(echo "Main Menu
+World
+  Server" | $DMENU -l 10) in
+  "World")
+    W_MODE=1
+    ;;
+  *)
+    W_MODE=0
+    ;;
 
-# if we leave the prog $SOURCE is empty so quit
-if [ -z "$SOURCE" ]; then
+  esac
+  INS=$HOME/Storage/Games/instances
+  echo INS_MINECRAFT="$INS_MINECRAFT" >>$LOG
+  if [ ! -z "$INS_MINECRAFT" ]; then
+    INS=$INS_MINECRAFT
+  fi
+  echo INS="$INS" >>$LOG
+  # TODO: sort by last played
+  if [ $F_MODE = 1 ]; then
+    SOURCE=$(cat "$FAV_PATH" | shuf | $DMENU -l 10)
+  elif [ $SEL_FAV = 1 ] && [ $F_MODE = 0 ]; then
+    echo "$SOURCE" >>"$FAV_PATH"
+    main
+  else
+    SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
+  fi
+
+  # if we leave the prog $SOURCE is empty so quit
+  if [ -z "$SOURCE" ]; then
+    exit 1
+  fi
+
+  # do stuff to selected pack, you can get metadata from it or and launch it
+  PACK="$INS/$SOURCE"
+  #VERS=$(awk -F= '/^ManagedPackVersionName=/{print $2}' "$PACK/instance.cfg")
+  #DATE=$(awk -F= '/^lastLaunchTime=/{print $2}' "$PACK/instance.cfg")
+  #ls -a "$PACK"
+  #cat "$PACK/mmc-pack.json"
+  #cat "$PACK/instance.cfg"
+
+  # world selector
+  DOTMC="$PACK/.minecraft"
+  if [ ! -e "$DOTMC" ]; then
+    DOTMC="$PACK/minecraft"
+  fi
+  if [ $W_MODE = 1 ]; then
+    WDIR="$(ls "$DOTMC/saves" | shuf | $DMENU -l 10)"
+    if [ -z "$WDIR" ]; then
+      # in case of changing your mind hit esc and go out
+      main
+    fi
+  fi
+
+  # launch the pack
+  if [[ -d "$PACK" ]]; then
+    echo "Launching $PACK"
+    if [ -z "$WDIR" ]; then
+      $LAUNCHER --launch "$SOURCE" -w "$WDIR" &
+    else
+      $LAUNCHER -launch "$SOURCE" &
+    fi
+  else
+    echo "file $PACK dose not exist"
+    exit 0
+  fi
   exit 1
-fi
+  #$LAUNCHER --config "$SOURCE"
 
-# do stuff to selected pack, you can get metadata from it or and launch it
-PACK="$INS/$SOURCE"
-#VERS=$(awk -F= '/^ManagedPackVersionName=/{print $2}' "$PACK/instance.cfg")
-#DATE=$(awk -F= '/^lastLaunchTime=/{print $2}' "$PACK/instance.cfg")
-#ls -a "$PACK"
-#cat "$PACK/mmc-pack.json"
-#cat "$PACK/instance.cfg"
+  #Usage: prismlauncher [-h] [-v] [-d dir] [-l launch] [-s server] [-a profile] [-I import] [--show show] [--alive] [--help-all]
 
-# world selector
-DOTMC="$PACK/.minecraft"
-if [ ! -e "$DOTMC" ]; then
-  DOTMC="$PACK/minecraft"
-fi
-WDIR="$(ls "$DOTMC/saves" | shuf | $DMENU -l 10)"
+  #Options:
+  #  -d, --dir directory    Use a custom path as application root (use '.' for current directory)
+  #  -l, --launch instance  Launch the specified instance (by instance ID)
+  #  -s, --server address   Join the specified server on launch (only valid in combination with --launch)
+  #  -a, --profile profile  Use the account specified by its profile name (only valid in combination with --launch)
+  #  --alive                Write a small 'live.check' file after the launcher starts
+  #  -I, --import file      Import instance from specified zip (local path or URL)
+  #  --show show            Opens the window for the specified instance (by instance ID)
+  #  -h, --help             Displays help on commandline options.
+  #  --help-all             Displays help, including generic Qt options.
+  #  -v, --version          Displays version information.
+  #
+}
 
-# launch the pack
-if [ -z "$WDIR" ]; then
-  $LAUNCHER --launch "$SOURCE" -w "$WDIR"
-else
-  $LAUNCHER -launch "$SOURCE"
-fi
-#$LAUNCHER --config "$SOURCE"
-
-#Usage: prismlauncher [-h] [-v] [-d dir] [-l launch] [-s server] [-a profile] [-I import] [--show show] [--alive] [--help-all]
-
-#Options:
-#  -d, --dir directory    Use a custom path as application root (use '.' for current directory)
-#  -l, --launch instance  Launch the specified instance (by instance ID)
-#  -s, --server address   Join the specified server on launch (only valid in combination with --launch)
-#  -a, --profile profile  Use the account specified by its profile name (only valid in combination with --launch)
-#  --alive                Write a small 'live.check' file after the launcher starts
-#  -I, --import file      Import instance from specified zip (local path or URL)
-#  --show show            Opens the window for the specified instance (by instance ID)
-#  -h, --help             Displays help on commandline options.
-#  --help-all             Displays help, including generic Qt options.
-#  -v, --version          Displays version information.
+main
