@@ -1,5 +1,12 @@
 #!/bin/sh
 # looks for your minecraft instance folder and lets you choose packs to run them quickly without opneing prism!
+#
+# DEP:
+#
+# feh
+# dmenu | rufi | bemenu
+# shuf
+#
 # TODO: ADD MODES (resourcepack viewer and screenshot browser)
 # TODO: Launch straight into server
 # TODO: make it work with polymc and other launchers that support commands
@@ -11,11 +18,12 @@ LAUNCHER=/bin/prismlauncher
 LOG=/tmp/mc.log # enable logging
 # use bemenu bec wayland, use dmenu if not wayland
 #DMENU=/bin/bemenu
-DMENU="/bin/rofi -dmenu"
+DMENU="/bin/rofi -dmenu -case-smart"
 F_MODE=0
+S_MODE=0
 W_MODE=0
 SEL_FAV=0
-REM_FAV=0
+#REM_FAV=0
 rm $LOG >>/dev/null
 touch $LOG
 date >>$LOG
@@ -51,8 +59,8 @@ Exit"
     main
     ;;
   "Browse Screenshots")
-    #TODO: Screenshots
-    main
+    S_MODE=1
+    play
     ;;
   "Exit")
     exit 1
@@ -64,38 +72,50 @@ Exit"
   esac
 }
 
-play() {
-  # FIXME globvar setting dosent work
-  # list instances, change to your instance folder
-  # use env varb $INS_MINECRAFT to set it
-  # TODO make it grab prism launcher instance dir
+select_world_menu() {
   case $(echo "Main Menu
 World
-  Server" | $DMENU -l 10) in
+Server" | $DMENU -l 10) in
   "World")
     W_MODE=1
     ;;
   *)
     W_MODE=0
     ;;
-
   esac
+}
+
+setup_instance() {
+  # FIXME globvar setting dosent work
+  # list instances, change to your instance folder
+  # use env varb $INS_MINECRAFT to set it
+  # TODO make it grab prism launcher instance dir
   INS=$HOME/Storage/Games/instances
   echo INS_MINECRAFT="$INS_MINECRAFT" >>$LOG
   if [ ! -z "$INS_MINECRAFT" ]; then
     INS=$INS_MINECRAFT
   fi
   echo INS="$INS" >>$LOG
-  # TODO: sort by last played
+}
+
+setup_pack() {
+  # skip world selection if we are in fav selection mode
+  if
+    [ $SEL_FAV = 0 ] &&
+      [ $S_MODE = 0 ]
+  then
+    select_world_menu
+  fi
   if [ $F_MODE = 1 ]; then
     SOURCE=$(cat "$FAV_PATH" | shuf | $DMENU -l 10)
+  # TODO: sort by last played
   elif [ $SEL_FAV = 1 ] && [ $F_MODE = 0 ]; then
+    SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
     echo "$SOURCE" >>"$FAV_PATH"
     main
   else
     SOURCE="$(ls $INS | shuf | $DMENU -l 10)"
   fi
-
   # if we leave the prog $SOURCE is empty so quit
   if [ -z "$SOURCE" ]; then
     exit 1
@@ -108,6 +128,11 @@ World
   #ls -a "$PACK"
   #cat "$PACK/mmc-pack.json"
   #cat "$PACK/instance.cfg"
+}
+
+play() {
+  setup_instance
+  setup_pack
 
   # world selector
   DOTMC="$PACK/.minecraft"
@@ -117,12 +142,18 @@ World
   if [ $W_MODE = 1 ]; then
     WDIR="$(ls "$DOTMC/saves" | shuf | $DMENU -l 10)"
     if [ -z "$WDIR" ]; then
-      # in case of changing your mind hit esc and go out
       main
     fi
+  elif [ $S_MODE = 1 ]; then
+    if [ ! -e "$DOTMC/screenshots" ]; then
+      main
+    fi
+    feh "$DOTMC/screenshots"
+    exit
   fi
 
   # launch the pack
+  # TODO: make POSIX
   if [[ -d "$PACK" ]]; then
     echo "Launching $PACK"
     if [ -z "$WDIR" ]; then
